@@ -1,5 +1,8 @@
 ﻿"use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
@@ -25,7 +28,7 @@ type Course = {
   highlight?: boolean;
 };
 
-const ANGELA_IMG = "/photo_2025-08-16_21-20-50.jpg"; // public/
+const ANGELA_IMG = "/photo_2025-08-16_21-20-50.jpg";
 
 const tarotCourses: Course[] = [
   { id: "t1", title: "Таро с нуля: базовая система", level: "Старт", price: 5500, duration: "4 недели", points: ["Младшие и Старшие арканы без воды","Чёткие расклады для быта и бизнеса","Практика на реальных кейсах"] },
@@ -45,16 +48,16 @@ const astroCourses: Course[] = [
 
 const formatPrice = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 
+// >>> НАДЁЖНАЯ ссылка прямо на /demo-checkout (без API-роутов)
 function getCheckoutHref(c: Course) {
   const q = new URLSearchParams({
     courseId: c.id,
     title: c.title,
     amount: String(c.price),
     currency: "RUB",
-    demo: "1",
     source: "course-card",
   });
-  return `/api/payments/create-intent?${q.toString()}`;
+  return `/demo-checkout?${q.toString()}`;
 }
 
 function CourseCard({ course, accent }: { course: Course; accent?: boolean }) {
@@ -104,6 +107,7 @@ function CourseCard({ course, accent }: { course: Course; accent?: boolean }) {
   );
 }
 
+// === dev tests (оставил без изменений)
 function runDevTests() {
   try {
     const groups = [
@@ -142,7 +146,7 @@ export default function AngelaPearlLanding() {
 
   const [track, setTrack] = useState<"tarot" | "astro">("tarot");
 
-  // ====== АНИМАЦИЯ HERO ======
+  // ====== АНИМАЦИЯ HERO (канвас) ======
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -166,7 +170,6 @@ export default function AngelaPearlLanding() {
     fit();
     window.addEventListener("resize", fit);
 
-    // ---- Звёзды ----
     type Star = { x:number; y:number; r:number; twinkle:boolean; phase:number; omega:number; baseA:number; glow:number; };
     const stars: Star[] = [];
     const seedStars = () => {
@@ -175,14 +178,14 @@ export default function AngelaPearlLanding() {
       const w = p.clientWidth, h = p.clientHeight;
       const N = 160;
       for (let i = 0; i < N; i++) {
-        const tw = Math.random() < 0.3; // 30% — яркие "дышащие"
+        const tw = Math.random() < 0.3;
         stars.push({
           x: Math.random()*w,
           y: Math.random()*h*0.9,
           r: tw ? (1.2 + Math.random()*1.2) : (0.6 + Math.random()*0.8),
           twinkle: tw,
           phase: Math.random()*Math.PI*2,
-          omega: 0.4 + Math.random()*0.8, // рад/с (медленное дыхание)
+          omega: 0.4 + Math.random()*0.8,
           baseA: tw ? 0.6 : 0.28,
           glow: tw ? 8 + Math.random()*8 : 0,
         });
@@ -190,28 +193,21 @@ export default function AngelaPearlLanding() {
     };
     seedStars();
 
-    // ---- Падающая звезда (точно поверх статичной линии, вправо-вниз) ----
     type Meteor = { active:boolean; x:number; y:number; vx:number; vy:number; life:number; };
     let meteor: Meteor = { active:false, x:0, y:0, vx:0, vy:0, life:0 };
 
     const spawnMeteor = () => {
       const p = canvas.parentElement!;
       const w = p.clientWidth, h = p.clientHeight;
-
       const sx = w*0.78, sy = h*0.12;
       const ex = w*0.92, ey = h*0.30;
-
       const dx = ex - sx, dy = ey - sy;
       const len = Math.hypot(dx, dy);
       const ux = dx/len, uy = dy/len;
-
-      const pxPerFrame = 8; // скорость
+      const pxPerFrame = 8;
       meteor = {
-        active: true,
-        x: sx,
-        y: sy,
-        vx: ux * pxPerFrame,
-        vy: uy * pxPerFrame,
+        active: true, x: sx, y: sy,
+        vx: ux * pxPerFrame, vy: uy * pxPerFrame,
         life: (len / pxPerFrame) / 60 + 0.3,
       };
     };
@@ -219,7 +215,6 @@ export default function AngelaPearlLanding() {
     timer = setInterval(spawnMeteor, 10000);
     setTimeout(spawnMeteor, 1200);
 
-    // ---- Рендер ----
     const draw = (ms: number) => {
       const t = ms/1000;
       const p = canvas.parentElement!;
@@ -235,7 +230,6 @@ export default function AngelaPearlLanding() {
       ctx.fillStyle = grad;
       ctx.fillRect(0,0,w,h);
 
-      // Звёзды
       for (const s of stars) {
         let alpha = s.baseA;
         if (s.twinkle) {
@@ -250,17 +244,16 @@ export default function AngelaPearlLanding() {
           ctx.fillStyle = "white";
           ctx.fill();
           ctx.restore();
-          continue;
+        } else {
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = "white";
+          ctx.fill();
         }
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-        ctx.fillStyle = "white";
-        ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Падающая звезда — поверх статичной, без лишних «полос»
       if (meteor.active) {
         meteor.life -= 1/60;
         meteor.x += meteor.vx;
@@ -417,7 +410,7 @@ export default function AngelaPearlLanding() {
           >Таро</Button>
 
           <Button role="tab" aria-selected={track === "astro"}
-            className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6а2] bg-white/80 text-[#3c2f1e]"}`}
+            className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
             style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
             onClick={() => setTrack("astro")}
           >Астрология</Button>
@@ -505,7 +498,7 @@ export default function AngelaPearlLanding() {
                 </div>
                 <div className="flex items-center border border-[#e0d4bf] rounded-xl bg-white/80 px-3">
                   <Phone className="h-4 w-4 text-[#6b5a43]" />
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1е]" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
                 </div>
                 <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Короткий вопрос (опционально)" className="border-[#e0d4bf] text-[#3c2f1e]" />
                 <div className="flex items-center gap-3">

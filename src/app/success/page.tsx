@@ -1,26 +1,26 @@
 ﻿"use client";
-
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import Link from "next/link";
 
-export default function Success() {
+export default function SuccessPage() {
   const sp = useSearchParams();
-  const router = useRouter();
-  const title = sp.get("title") ?? "Оплата";
-  const amount = sp.get("amount") ?? "0";
-  const currency = sp.get("currency") ?? "RUB";
+  const title = sp.get("title") ?? "Доступ к программе";
+  const amount = Number(sp.get("amount") ?? 0);
+  const priceFmt = new Intl.NumberFormat("ru-RU", { style:"currency", currency:"RUB", maximumFractionDigits:0 }).format(amount);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8f5ef] p-6">
-      <div className="rounded-2xl border border-[#eadfcf] bg-white/80 backdrop-blur-md p-8 max-w-md text-center">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-          <Check className="h-6 w-6 text-green-700" />
+    <div className="min-h-screen flex items-center justify-center" style={{background:"#f8f5ef"}}>
+      <div className="rounded-2xl border border-[#eadfcf] bg-white/80 backdrop-blur-md p-8 text-center max-w-md">
+        <div className="text-2xl text-[#2f2619] font-semibold">Доступ открыт</div>
+        <div className="mt-2 text-[#6b5a43]">«{title}» — {priceFmt}</div>
+        <div className="mt-6">
+          <Button asChild className="rounded-xl"
+            style={{background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a"}}
+          >
+            <Link href="/">Вернуться на главную</Link>
+          </Button>
         </div>
-        <h1 className="text-2xl text-[#3c2f1e] font-semibold mb-2">Оплата успешна (демо)</h1>
-        <div className="text-[#5b4a33] mb-2">Курс: <span className="text-[#3c2f1e] font-medium">{title}</span></div>
-        <div className="text-[#3c2f1e] text-lg font-medium mb-6">{amount} {currency}</div>
-        <Button className="rounded-xl" onClick={() => router.push("/")}>Вернуться на главную</Button>
       </div>
     </div>
   );
