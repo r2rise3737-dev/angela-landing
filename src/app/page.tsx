@@ -48,7 +48,7 @@ const astroCourses: Course[] = [
 
 const formatPrice = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 
-// >>> НАДЁЖНАЯ ссылка прямо на /demo-checkout (без API-роутов)
+// надёжная ссылка прямо на /demo-checkout
 function getCheckoutHref(c: Course) {
   const q = new URLSearchParams({
     courseId: c.id,
@@ -107,7 +107,7 @@ function CourseCard({ course, accent }: { course: Course; accent?: boolean }) {
   );
 }
 
-// === dev tests (оставил без изменений)
+// === dev tests
 function runDevTests() {
   try {
     const groups = [
@@ -146,7 +146,7 @@ export default function AngelaPearlLanding() {
 
   const [track, setTrack] = useState<"tarot" | "astro">("tarot");
 
-  // ====== АНИМАЦИЯ HERO (канвас) ======
+  // ====== АНИМАЦИЯ HERO (канвас)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -155,7 +155,8 @@ export default function AngelaPearlLanding() {
     if (!ctx) return;
 
     let raf = 0;
-    let timer: any = null;
+    // ✅ правильный тип таймера под браузерный setInterval (число)
+    let timer: ReturnType<typeof setInterval> | null = null;
 
     const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
     const fit = () => {
@@ -213,7 +214,7 @@ export default function AngelaPearlLanding() {
     };
 
     timer = setInterval(spawnMeteor, 10000);
-    setTimeout(spawnMeteor, 1200);
+    window.setTimeout(spawnMeteor, 1200);
 
     const draw = (ms: number) => {
       const t = ms/1000;
@@ -287,7 +288,7 @@ export default function AngelaPearlLanding() {
 
     return () => {
       cancelAnimationFrame(raf);
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
       window.removeEventListener("resize", fit);
     };
   }, []);
@@ -514,7 +515,7 @@ export default function AngelaPearlLanding() {
             <div className="lg:pl-8">
               <div className="grid grid-cols-2 gap-4">
                 {features.map((f, i) => {
-                  const Icon = f.icon as LucideIcon;
+                  const Icon = (f.icon as LucideIcon);
                   return (
                     <div key={i} className="rounded-2xl border border-[#eadfcf] bg-white/70 p-4">
                       <Icon className="h-5 w-5 text-[#3c2f1e]" />
