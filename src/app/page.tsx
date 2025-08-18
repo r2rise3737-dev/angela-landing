@@ -1,15 +1,15 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   Play, Star, ShieldCheck, Check, ArrowRight, Sparkles,
-  BookOpen, MoonStar, Telescope, MessageCircle, Clock,
+  BookOpen, MoonStar, MessageCircle, Clock,
   ChevronRight, Mail, Phone,
 } from "lucide-react";
 
-import PaymentDialog from "../components/PaymentDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,34 +45,29 @@ const astroCourses: Course[] = [
 
 const formatPrice = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 
-function CourseCard({
-  course,
-  accent,
-  onPay,
-}: {
-  course: Course;
-  accent?: boolean;
-  onPay?: (c: Course) => void;
-}) {
+function getCheckoutHref(c: Course) {
+  const q = new URLSearchParams({
+    courseId: c.id,
+    title: c.title,
+    amount: String(c.price),
+    currency: "RUB",
+    demo: "1",
+    source: "course-card",
+  });
+  return `/api/payments/create-intent?${q.toString()}`;
+}
+
+function CourseCard({ course, accent }: { course: Course; accent?: boolean }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-    >
+    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
       <Card
         className={`group relative overflow-hidden border-0 shadow-lg rounded-2xl bg-white/70 backdrop-blur-md ${accent ? "ring-1 ring-[#d3b37b]" : ""}`}
         style={{ backgroundImage:"radial-gradient(1200px 400px at 10% -10%, rgba(232,220,198,0.45), transparent), radial-gradient(800px 300px at 110% 10%, rgba(233,226,212,0.5), transparent)" }}
       >
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{ background:"radial-gradient(400px 200px at 20% 0%, rgba(223,199,154,0.25), transparent)" }}
-        />
+        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+             style={{ background:"radial-gradient(400px 200px at 20% 0%, rgba(223,199,154,0.25), transparent)" }} />
         <CardHeader className="p-6">
-          <CardTitle className="text-xl tracking-tight text-[#3c2f1e] font-medium">
-            {course.title}
-          </CardTitle>
+          <CardTitle className="text-xl tracking-tight text-[#3c2f1e] font-medium">{course.title}</CardTitle>
           <div className="mt-2 flex items-center gap-3 text-sm text-[#6b5a43]">
             <span className="px-2 py-1 rounded-full bg-[#f2ebdf] border border-[#eadfcf]">{course.level}</span>
             <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {course.duration}</span>
@@ -88,19 +83,19 @@ function CourseCard({
             ))}
           </ul>
           <div className="mt-6 flex items-center justify-between">
-            <div className="text-2xl text-[#3c2f1e] font-semibold tracking-tight">
-              {formatPrice(course.price)}
-            </div>
+            <div className="text-2xl text-[#3c2f1e] font-semibold tracking-tight">{formatPrice(course.price)}</div>
             <Button
+              asChild
               className="rounded-xl px-5"
               style={{
                 background:"linear-gradient(180deg, #e7d6b2 0%, #d5bb8a 40%, #c39f61 100%)",
                 color:"#2e2619",
                 boxShadow:"0 8px 24px rgba(195,159,97,0.35), inset 0 1px 0 rgba(255,255,255,0.4)",
               }}
-              onClick={() => onPay?.(course)}
             >
-              Получить доступ <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href={getCheckoutHref(course)} prefetch={false} rel="nofollow">
+                Получить доступ <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </CardContent>
@@ -145,11 +140,164 @@ export default function AngelaPearlLanding() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<null | "ok" | "err">(null);
 
-  const [payOpen, setPayOpen] = useState(false);
-  const [payMeta, setPayMeta] = useState<{ title: string; amount: number } | null>(null);
-
-  // переключатель курсов
   const [track, setTrack] = useState<"tarot" | "astro">("tarot");
+
+  // ====== АНИМАЦИЯ HERO ======
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let raf = 0;
+    let timer: any = null;
+
+    const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const fit = () => {
+      const p = canvas.parentElement!;
+      const w = p.clientWidth, h = p.clientHeight;
+      canvas.width = Math.floor(w * DPR);
+      canvas.height = Math.floor(h * DPR);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+
+    // ---- Звёзды ----
+    type Star = { x:number; y:number; r:number; twinkle:boolean; phase:number; omega:number; baseA:number; glow:number; };
+    const stars: Star[] = [];
+    const seedStars = () => {
+      stars.length = 0;
+      const p = canvas.parentElement!;
+      const w = p.clientWidth, h = p.clientHeight;
+      const N = 160;
+      for (let i = 0; i < N; i++) {
+        const tw = Math.random() < 0.3; // 30% — яркие "дышащие"
+        stars.push({
+          x: Math.random()*w,
+          y: Math.random()*h*0.9,
+          r: tw ? (1.2 + Math.random()*1.2) : (0.6 + Math.random()*0.8),
+          twinkle: tw,
+          phase: Math.random()*Math.PI*2,
+          omega: 0.4 + Math.random()*0.8, // рад/с (медленное дыхание)
+          baseA: tw ? 0.6 : 0.28,
+          glow: tw ? 8 + Math.random()*8 : 0,
+        });
+      }
+    };
+    seedStars();
+
+    // ---- Падающая звезда (точно поверх статичной линии, вправо-вниз) ----
+    type Meteor = { active:boolean; x:number; y:number; vx:number; vy:number; life:number; };
+    let meteor: Meteor = { active:false, x:0, y:0, vx:0, vy:0, life:0 };
+
+    const spawnMeteor = () => {
+      const p = canvas.parentElement!;
+      const w = p.clientWidth, h = p.clientHeight;
+
+      const sx = w*0.78, sy = h*0.12;
+      const ex = w*0.92, ey = h*0.30;
+
+      const dx = ex - sx, dy = ey - sy;
+      const len = Math.hypot(dx, dy);
+      const ux = dx/len, uy = dy/len;
+
+      const pxPerFrame = 8; // скорость
+      meteor = {
+        active: true,
+        x: sx,
+        y: sy,
+        vx: ux * pxPerFrame,
+        vy: uy * pxPerFrame,
+        life: (len / pxPerFrame) / 60 + 0.3,
+      };
+    };
+
+    timer = setInterval(spawnMeteor, 10000);
+    setTimeout(spawnMeteor, 1200);
+
+    // ---- Рендер ----
+    const draw = (ms: number) => {
+      const t = ms/1000;
+      const p = canvas.parentElement!;
+      const w = p.clientWidth, h = p.clientHeight;
+
+      const grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0.00,"rgba(213,195,235,0.30)");
+      grad.addColorStop(0.55,"rgba(248,245,239,0.22)");
+      grad.addColorStop(0.75,"rgba(248,245,239,0.50)");
+      grad.addColorStop(0.92,"rgba(248,245,239,0.78)");
+      grad.addColorStop(1.00,"rgba(248,245,239,0.98)");
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,w,h);
+
+      // Звёзды
+      for (const s of stars) {
+        let alpha = s.baseA;
+        if (s.twinkle) {
+          const k = 0.5 + 0.5*Math.sin(s.phase + t*s.omega);
+          alpha = 0.6 + 0.4*k;
+          ctx.save();
+          ctx.globalAlpha = alpha*0.9;
+          ctx.shadowBlur = s.glow;
+          ctx.shadowColor = "rgba(255,255,255,0.9)";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          ctx.restore();
+          continue;
+        }
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Падающая звезда — поверх статичной, без лишних «полос»
+      if (meteor.active) {
+        meteor.life -= 1/60;
+        meteor.x += meteor.vx;
+        meteor.y += meteor.vy;
+
+        const tail = 46;
+        const angle = Math.atan2(meteor.vy, meteor.vx);
+        for (let i=0; i<tail; i++){
+          const t0 = i/tail;
+          const dx = Math.cos(angle)*(-i*1.7);
+          const dy = Math.sin(angle)*(-i*1.7);
+          ctx.save();
+          ctx.globalAlpha = (1 - t0) * Math.max(0, Math.min(1, meteor.life));
+          ctx.shadowBlur = 10*(1 - t0);
+          ctx.shadowColor = "rgba(255,255,255,0.9)";
+          ctx.beginPath();
+          ctx.arc(meteor.x + dx, meteor.y + dy, 1.2 + (1 - t0)*1.8, 0, Math.PI*2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (meteor.life <= 0 || meteor.x > w+50 || meteor.y > h+50) {
+          meteor.active = false;
+        }
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(timer);
+      window.removeEventListener("resize", fit);
+    };
+  }, []);
 
   useEffect(() => { if (typeof window !== "undefined") runDevTests(); }, []);
 
@@ -160,13 +308,6 @@ export default function AngelaPearlLanding() {
     { icon: MessageCircle, title: "Коммьюнити", text: "Обмен заявками" },
   ];
 
-  // открыть демо-оплату с данными курса
-  function handlePay(c: Course) {
-    setPayMeta({ title: c.title, amount: c.price });
-    setPayOpen(true);
-  }
-
-  // скролл к каталогу (используем сверху и снизу)
   function scrollToCourses() {
     document.getElementById("courses")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -218,11 +359,17 @@ export default function AngelaPearlLanding() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="absolute inset-0 overflow-hidden rounded-b-[28px] border-b border-[#eadfcf]">
-          <video className="h-[72vh] w-full object-cover" autoPlay muted loop playsInline
-                 poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2940&auto=format&fit=crop" />
-          <div className="absolute inset-0" style={{ background:"linear-gradient(180deg, rgba(248,245,239,0.0) 0%, rgba(248,245,239,0.6) 55%, #f8f5ef 100%)" }}/>
+        <div className="absolute inset-0 overflow-hidden rounded-b-[28px]">
+          <video
+            className="h-[72vh] w-full object-cover"
+            autoPlay muted loop playsInline
+            poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2940&auto=format&fit=crop"
+          />
+          <div className="absolute inset-0"
+               style={{ background:"linear-gradient(180deg, rgba(248,245,239,0.00) 0%, rgba(248,245,239,0.28) 58%, rgba(248,245,239,0.52) 76%, rgba(248,245,239,0.90) 100%)" }} />
+          <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" aria-hidden="true" />
         </div>
+
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-16">
           <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:0.7}} className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#eadfcf] bg-white/70 px-3 py-1 text-xs text-[#6b5a43] backdrop-blur-md">
@@ -251,48 +398,36 @@ export default function AngelaPearlLanding() {
         </div>
       </section>
 
-      {/* КАТАЛОГ + переключатель направлений */}
+      {/* КАТАЛОГ */}
       <section id="courses" className="mx-auto max-w-7xl px-4 py-16 scroll-mt-24">
         <div className="mb-4">
           <h2 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Программы обучения</h2>
         </div>
 
-        {/* Переключатель Таро / Астрология */}
         <div className="flex items-center gap-3 mb-4" role="tablist" aria-label="Направления обучения">
           <div className="text-[#6b5a43] mr-2 flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
             <span className="text-sm">Направление:</span>
           </div>
 
-          <Button
-            role="tab"
-            aria-selected={track === "tarot"}
+          <Button role="tab" aria-selected={track === "tarot"}
             className={`rounded-xl px-4 py-2 text-sm ${track === "tarot" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
             style={track === "tarot" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
             onClick={() => setTrack("tarot")}
-          >
-            Таро
-          </Button>
+          >Таро</Button>
 
-          <Button
-            role="tab"
-            aria-selected={track === "astro"}
-            className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
+          <Button role="tab" aria-selected={track === "astro"}
+            className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6а2] bg-white/80 text-[#3c2f1e]"}`}
             style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
             onClick={() => setTrack("astro")}
-          >
-            Астрология
-          </Button>
+          >Астрология</Button>
         </div>
 
-        <div className="mb-8 text-sm text-[#6b5a43]">
-          Технологичный формат: видео-уроки, живые разборы, чат-поддержка
-        </div>
+        <div className="mb-8 text-sm text-[#6b5a43]">Технологичный формат: видео-уроки, живые разборы, чат-поддержка</div>
 
-        {/* Список курсов по выбранному направлению */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentCourses.map((c) => (
-            <CourseCard key={c.id} course={c} accent={c.highlight} onPay={handlePay} />
+            <CourseCard key={c.id} course={c} accent={c.highlight} />
           ))}
         </div>
       </section>
@@ -334,7 +469,7 @@ export default function AngelaPearlLanding() {
       <section id="reviews" className="mx-auto max-w-7xl px-4 py-16">
         <div className="mb-8 text-center">
           <h3 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Отзывы выпускников Академии</h3>
-          <p className="text-[#5б4a33] mt-2">Подтверждённые отзывы практикующих специалистов — о качестве подготовки и результатах в работе с клиентами.</p>
+          <p className="text-[#5b4a33] mt-2">Подтверждённые отзывы практикующих специалистов — о качестве подготовки и результатах в работе с клиентами.</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
@@ -346,7 +481,7 @@ export default function AngelaPearlLanding() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-[#e9e0cf] flex items-center justify-center text-[#3c2f1e] font-medium">{p.name[0]}</div>
-                  <div className="text-sm"><div className="text-[#3c2f1e]">{p.name}</div><div className="text-[#6б5a43] text-xs">{p.role}</div></div>
+                  <div className="text-sm"><div className="text-[#3c2f1e]">{p.name}</div><div className="text-[#6b5a43] text-xs">{p.role}</div></div>
                 </div>
                 <p className="mt-4 text-[#4a3e2c] leading-relaxed">«{p.text}»</p>
               </CardContent>
@@ -370,7 +505,7 @@ export default function AngelaPearlLanding() {
                 </div>
                 <div className="flex items-center border border-[#e0d4bf] rounded-xl bg-white/80 px-3">
                   <Phone className="h-4 w-4 text-[#6b5a43]" />
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1е]" />
                 </div>
                 <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Короткий вопрос (опционально)" className="border-[#e0d4bf] text-[#3c2f1e]" />
                 <div className="flex items-center gap-3">
@@ -433,10 +568,6 @@ export default function AngelaPearlLanding() {
           </div>
         </div>
       </footer>
-
-      {payOpen && payMeta && (
-        <PaymentDialog open={payOpen} onClose={() => setPayOpen(false)} amount={payMeta.amount} title={payMeta.title}/>
-      )}
     </div>
   );
 }
