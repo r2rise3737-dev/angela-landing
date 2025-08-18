@@ -139,7 +139,7 @@ function runDevTests() {
         console.assert(typeof c.title === "string" && c.title.length > 2, `${g.name}:${c.id} некорректный title`);
         console.assert(typeof c.level === "string" && c.level, `${g.name}:${c.id} level обязателен`);
         console.assert(typeof c.price === "number" && c.price >= 5500 && c.price <= 35000, `${g.name}:${c.id} price вне диапазона 5500–35000`);
-        console.assert(typeof c.duration === "string" && c.duration обязателен`);
+        console.assert(typeof c.duration === "string" && c.duration, `${g.name}:${c.id} duration обязателен`);
         console.assert(Array.isArray(c.points) && c.points.length >= 3, `${g.name}:${c.id} минимум 3 bullets`);
         console.assert(c.points.every((p: string) => typeof p === "string" && p.length > 0), `${g.name}:${c.id} пустые bullets`);
         hasHighlight = hasHighlight || !!c.highlight;
@@ -160,6 +160,7 @@ export default function HomeClient() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<null | "ok" | "err">(null);
 
+  // переключатель курсов
   const [track, setTrack] = useState<"tarot" | "astro">("tarot");
 
   useEffect(() => { if (typeof window !== "undefined") runDevTests(); }, []);
@@ -304,8 +305,16 @@ export default function HomeClient() {
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <div className="relative overflow-hidden rounded-2xl border border-[#eadfcf] bg-white/70 p-1">
-              <div id="angela-portrait" className="aspect-[4/3] w-full rounded-xl overflow-hidden shadow-lg"
-                   style={{ backgroundImage:`url(${ANGELA_IMG})`, backgroundSize:"cover", backgroundPosition:"top center", filter:"contrast(1.05) brightness(1.02)" }}/>
+              <div
+                id="angela-portrait"
+                className="aspect-[4/3] w-full rounded-xl overflow-hidden shadow-lg"
+                style={{
+                  backgroundImage:`url(${ANGELA_IMG})`,
+                  backgroundSize:"cover",
+                  backgroundPosition:"top center",
+                  filter:"contrast(1.05) brightness(1.02)"
+                }}
+              />
             </div>
           </div>
           <div>
