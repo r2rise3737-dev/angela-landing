@@ -13,8 +13,7 @@ type Props = {
   amount: number;
 };
 
-const fmtRub = (n: number) =>
-  new Intl.NumberFormat("ru-RU").format(n) + " ₽";
+const fmtRub = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 
 export default function PaymentDialog({ open, onClose, title, amount }: Props) {
   const [card, setCard] = useState("");
@@ -51,11 +50,9 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
     setErr(null);
     setBusy(true);
     try {
-      // НИ ОДНОЕ поле карты НЕ уходим никуда — ниже шлём только метаданные
+      // НИ ОДНОЕ поле карты никуда не отправляем — ниже шлём только метаданные
       const payloadEmail = email || "demo@no-email.local";
-      const note = `DEMO-ОПЛАТА (без отправки карты): ${title} — ${fmtRub(
-        amount
-      )}`;
+      const note = `DEMO-ОПЛАТА (без отправки карты): ${title} — ${fmtRub(amount)}`;
       await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,7 +65,7 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
       // имитируем процесс
       await new Promise((r) => setTimeout(r, 900));
       setDone(true);
-    } catch (e) {
+    } catch {
       setErr("Что-то пошло не так. Попробуйте ещё раз.");
     } finally {
       setBusy(false);
@@ -114,7 +111,7 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
                     autoComplete="cc-number"
                     placeholder="0000 0000 0000 0000"
                     value={card}
-                    onChange={(e) => setCard(maskCard(e.target.value))}
+                    onChange={(ev) => setCard(maskCard(ev.target.value))}
                     className="mt-1"
                   />
                 </div>
@@ -126,7 +123,7 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
                       autoComplete="cc-exp"
                       placeholder="MM/YY"
                       value={exp}
-                      onChange={(e) => setExp(maskExp(e.target.value))}
+                      onChange={(ev) => setExp(maskExp(ev.target.value))}
                       className="mt-1"
                     />
                   </div>
@@ -137,8 +134,8 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
                       autoComplete="cc-csc"
                       placeholder="CVC"
                       value={cvc}
-                      onChange={(e) =>
-                        setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
+                      onChange={(ev) =>
+                        setCvc(ev.target.value.replace(/\D/g, "").slice(0, 4))
                       }
                       className="mt-1"
                     />
@@ -150,7 +147,7 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
                     autoComplete="cc-name"
                     placeholder="IVAN IVANOV"
                     value={holder}
-                    onChange={(e) => setHolder(e.target.value)}
+                    onChange={(ev) => setHolder(ev.target.value)}
                     className="mt-1"
                   />
                 </div>
@@ -162,14 +159,12 @@ export default function PaymentDialog({ open, onClose, title, amount }: Props) {
                     type="email"
                     placeholder="you@example.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(ev) => setEmail(ev.target.value)}
                     className="mt-1"
                   />
                 </div>
 
-                {err && (
-                  <div className="text-sm text-red-700 mt-1">{err}</div>
-                )}
+                {err && <div className="text-sm text-red-700 mt-1">{err}</div>}
 
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <Button
