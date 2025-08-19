@@ -45,15 +45,16 @@ const astroCourses: Course[] = [
 
 const formatPrice = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
 
-// ПРЯМАЯ ссылка на demo-checkout (без api-хэндлеров)
 function getCheckoutHref(c: Course) {
   const q = new URLSearchParams({
+    courseId: c.id,
     title: c.title,
     amount: String(c.price),
     currency: "RUB",
+    demo: "1",
     source: "course-card",
   });
-  return `/demo-checkout?${q.toString()}`;
+  return `/api/payments/create-intent?${q.toString()}`;
 }
 
 function CourseCard({
@@ -74,7 +75,7 @@ function CourseCard({
         className={`group relative overflow-hidden border-0 shadow-lg rounded-2xl bg-white/70 backdrop-blur-md ${accent ? "ring-1 ring-[#d3b37b]" : ""}`}
         style={{ backgroundImage:"radial-gradient(1200px 400px at 10% -10%, rgba(232,220,198,0.45), transparent), radial-gradient(800px 300px at 110% 10%, rgba(233,226,212,0.5), transparent)" }}
       >
-        {/* Декор, клики не перехватывает */}
+        {/* Декоративный слой, но клики не перехватывает */}
         <div
           className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{ background:"radial-gradient(400px 200px at 20% 0%, rgba(223,199,154,0.25), transparent)" }}
@@ -102,7 +103,7 @@ function CourseCard({
               {formatPrice(course.price)}
             </div>
 
-            {/* НАДЁЖНЫЙ ПЕРЕХОД: обычная ссылка на /demo-checkout */}
+            {/* КНОПКА-ССЫЛКА (надежный переход без JS-хэндлеров) */}
             <Button
               asChild
               className="rounded-xl px-5"
@@ -271,7 +272,7 @@ export default function HomeClient() {
             role="tab"
             aria-selected={track === "tarot"}
             className={`rounded-xl px-4 py-2 text-sm ${track === "tarot" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
-            style={track === "tarot" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
+            style={track === "tarot" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271а" } : undefined}
             onClick={() => setTrack("tarot")}
           >
             Таро
@@ -281,7 +282,7 @@ export default function HomeClient() {
             role="tab"
             aria-selected={track === "astro"}
             className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
-            style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
+            style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271а" } : undefined}
             onClick={() => setTrack("astro")}
           >
             Астрология
@@ -301,4 +302,151 @@ export default function HomeClient() {
 
       {/* ОБ АВТОРЕ */}
       <section id="about" className="mx-auto max-w-7xl px-4 py-16">
-        <div className="grid lg:grid-cols-2
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <div className="relative overflow-hidden rounded-2xl border border-[#eadfcf] bg-white/70 p-1">
+              <div
+                id="angela-portrait"
+                className="aspect-[4/3] w-full rounded-xl overflow-hidden shadow-lg"
+                style={{
+                  backgroundImage:`url(${ANGELA_IMG})`,
+                  backgroundSize:"cover",
+                  backgroundPosition:"top center",
+                  filter:"contrast(1.05) brightness(1.02)"
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Angela Pearl</h3>
+            <p className="mt-4 text-[#5b4a33] leading-relaxed">
+              Международный консультант и автор методик по Таро и Астрологии.
+              Более 20 лет практики и сотни специалистов по всему миру.
+              Чёткая структура обучения, уважение к этике профессии и фокус на практике — без лишнего.
+            </p>
+            <div className="mt-6 grid sm:grid-cols-3 gap-4">
+              {[
+                { k: "Специалистов", v: "700+" },
+                { k: "Стран", v: "20+" },
+                { k: "Лет практики", v: "20+" },
+              ].map((i) => (
+                <div key={i.k} className="rounded-xl border border-[#eadfcf] p-4 text-center shadow-sm hover:shadow-md transition-shadow bg-white/70">
+                  <div className="text-2xl text-[#3c2f1e] font-semibold">{i.v}</div>
+                  <div className="text-xs text-[#6b5a43] mt-1">{i.k}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <style>{`@media (max-width: 640px){ #angela-portrait{ background-position:center center !important; }}`}</style>
+      </section>
+
+      {/* ОТЗЫВЫ */}
+      <section id="reviews" className="mx-auto max-w-7xl px-4 py-16">
+        <div className="mb-8 text-center">
+          <h3 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Отзывы выпускников Академии</h3>
+          <p className="text-[#5b4a33] mt-2">Подтверждённые отзывы практикующих специалистов — о качестве подготовки и результатах в работе с клиентами.</p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { name: "Анна В.", role: "Ученица Академии Angela Pearl", text: "С первого месяца начала брать консультации. Материал структурный, без воды — быстро вышла на стабильный поток клиентов." },
+            { name: "Марина К.", role: "Таролог из нового потока", text: "Понравилась система разборов: после каждого блока есть практика и обратная связь. Это сильно ускоряет рост." },
+            { name: "Алексей Р.", role: "Астролог и консультант клиентов", text: "Глубокие методики + этика работы с запросом. Чётко, уважительно к клиенту — и результаты заметны." },
+          ].map((p, i) => (
+            <Card key={i} className="border-0 rounded-2xl bg-white/70 backdrop-blur-md">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-[#e9e0cf] flex items-center justify-center text-[#3c2f1e] font-medium">{p.name[0]}</div>
+                  <div className="text-sm">
+                    <div className="text-[#3c2f1e]">{p.name}</div>
+                    <div className="text-[#6b5a43] text-xs">{p.role}</div>
+                  </div>
+                </div>
+                <p className="mt-4 text-[#4a3e2c] leading-relaxed">«{p.text}»</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA + ФОРМА */}
+      <section className="mx-auto max-w-7xl px-4 py-16">
+        <div className="relative overflow-hidden rounded-2xl border border-[#eadfcf] bg-white/70 p-8">
+          <div className="absolute -top-20 -right-10 h-64 w-64 rounded-full opacity-30" style={{background:"radial-gradient(circle, #ead9b8, #d7bb8a)", filter:"blur(20px)"}}/>
+          <div className="grid lg:grid-cols-2 gap-8 items-center relative">
+            <div>
+              <h3 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Присоединиться к набору</h3>
+              <p className="mt-3 text-[#5b4a33]">Оставьте контакты — ответим на вопросы и поможем выбрать программу.</p>
+              <div className="mt-6 grid gap-3">
+                <div className="flex items-center border border-[#e0d4bf] rounded-xl bg-white/80 px-3">
+                  <Mail className="h-4 w-4 text-[#6b5a43]" />
+                  <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Ваш email" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
+                </div>
+                <div className="flex items-center border border-[#e0д4bf] rounded-xl bg-white/80 px-3">
+                  <Phone className="h-4 w-4 text-[#6b5a43]" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
+                </div>
+                <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Короткий вопрос (опционально)" className="border-[#e0d4bf] text-[#3c2f1e]" />
+                <div className="flex items-center gap-3">
+                  <Button className="rounded-xl px-5 py-5 text-base" style={{background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a"}} onClick={submitLead} disabled={sending}>
+                    {sending ? "Отправляем..." : "Получить доступ"}
+                  </Button>
+                  <div className="text-xs text-[#6b5a43]">Нажимая, вы соглашаетесь с политикой обработки данных</div>
+                </div>
+                {sent === "ok" && <div className="text-green-700 text-sm mt-2">Спасибо! Заявка отправлена — проверьте канал/бот.</div>}
+                {sent === "err" && <div className="text-red-700 text-sm mt-2">Не удалось отправить. Попробуйте позже.</div>}
+              </div>
+            </div>
+            <div className="lg:pl-8">
+              <div className="grid grid-cols-2 gap-4">
+                {features.map((f, i) => {
+                  const Icon = f.icon as LucideIcon;
+                  return (
+                    <div key={i} className="rounded-2xl border border-[#eadfcf] bg-white/70 p-4">
+                      <Icon className="h-5 w-5 text-[#3c2f1e]" />
+                      <div className="mt-2 text-[#3c2f1e] font-medium">{f.title}</div>
+                      <div className="text-sm text-[#6b5a43]">{f.text}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* КОНТАКТЫ */}
+      <section id="contact" className="mx-auto max-w-7xl px-4 pb-20">
+        <div className="rounded-2xl border border-[#eadfcf] bg-white/70 p-6">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div>
+              <h4 className="text-2xl tracking-tight text-[#2f2619] font-semibold">Остались вопросы?</h4>
+              <p className="text-[#6b5a43] mt-1">Напишите в поддержку — ответим оперативно.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="rounded-xl border-[#d9c6a2] text-[#3c2f1e]">Написать в чат</Button>
+              <Button
+                className="rounded-xl"
+                style={{background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a"}}
+                onClick={scrollToCourses}
+              >
+                Получить доступ
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Футер */}
+      <footer className="border-t border-[#eadfcf] bg-white/60 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-[#6b5a43]">© {new Date().getFullYear()} Angela Pearl Academy</div>
+          <div className="text-xs text-[#6b5a43] flex items-center gap-4">
+            <a href="#" className="hover:opacity-70">Политика конфиденциальности</a>
+            <a href="#" className="hover:opacity-70">Договор оферты</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
