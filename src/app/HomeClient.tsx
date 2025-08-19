@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import StarSky from "@/components/StarSky";
 
 type Course = {
   id: string;
@@ -75,7 +76,7 @@ function CourseCard({
         className={`group relative overflow-hidden border-0 shadow-lg rounded-2xl bg-white/70 backdrop-blur-md ${accent ? "ring-1 ring-[#d3b37b]" : ""}`}
         style={{ backgroundImage:"radial-gradient(1200px 400px at 10% -10%, rgba(232,220,198,0.45), transparent), radial-gradient(800px 300px at 110% 10%, rgba(233,226,212,0.5), transparent)" }}
       >
-        {/* Декоративный слой, но клики не перехватывает */}
+        {/* Декор без перехвата кликов */}
         <div
           className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{ background:"radial-gradient(400px 200px at 20% 0%, rgba(223,199,154,0.25), transparent)" }}
@@ -103,7 +104,6 @@ function CourseCard({
               {formatPrice(course.price)}
             </div>
 
-            {/* КНОПКА-ССЫЛКА (надежный переход без JS-хэндлеров) */}
             <Button
               asChild
               className="rounded-xl px-5"
@@ -160,7 +160,6 @@ export default function HomeClient() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<null | "ok" | "err">(null);
 
-  // переключатель курсов
   const [track, setTrack] = useState<"tarot" | "astro">("tarot");
 
   useEffect(() => { if (typeof window !== "undefined") runDevTests(); }, []);
@@ -223,25 +222,48 @@ export default function HomeClient() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="absolute inset-0 overflow-hidden rounded-b-[28px] border-b border-[#eadfcf]">
-          <video className="h-[72vh] w-full object-cover" autoPlay muted loop playsInline
-                 poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2940&auto=format&fit=crop" />
-          <div className="absolute inset-0" style={{ background:"linear-gradient(180deg, rgba(248,245,239,0.0) 0%, rgba(248,245,239,0.6) 55%, #f8f5ef 100%)" }}/>
+        <div className="absolute inset-0 overflow-hidden rounded-b-[28px] border-b border-transparent">
+          <video
+            className="h-[72vh] w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2940&auto=format&fit=crop"
+          />
+          {/* Звёздное небо поверх видео */}
+          <StarSky className="absolute inset-0 pointer-events-none" />
+          {/* Мягкая вуаль-переход */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(248,245,239,0.0) 0%, rgba(248,245,239,0.58) 56%, #f8f5ef 100%)",
+            }}
+          />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-16">
           <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:0.7}} className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#eadfcf] bg-white/70 px-3 py-1 text-xs text-[#6b5a43] backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5" /> Запуск нового набора — места ограничены
             </div>
-            <h1 className="mt-4 text-4xl md:text-5xl leading-tight tracking-tight text-[#2f2619] font-semibold">Премиальные курсы Таро и Астрологии</h1>
+            <h1 className="mt-4 text-4xl md:text-5xl leading-tight tracking-tight text-[#2f2619] font-semibold">
+              Премиальные курсы Таро и Астрологии
+            </h1>
             <p className="mt-4 text-[#5b4a33] text-base md:text-lg max-w-2xl">
               Эксклюзивные авторские программы Angela Pearl: ясная структура, глубокие инсайты и пошаговое сопровождение.
               Получите знания, которые превращаются в уверенную практику и востребованную профессию.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Button className="rounded-xl px-5 py-5 text-base"
-                style={{background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a", boxShadow:"0 16px 36px rgba(191,150,93,0.35)"}}
-                onClick={scrollToCourses}>
+              <Button
+                className="rounded-xl px-5 py-5 text-base"
+                style={{
+                  background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)",
+                  color:"#2f271a",
+                  boxShadow:"0 16px 36px rgba(191,150,93,0.35)",
+                }}
+                onClick={scrollToCourses}
+              >
                 Выбрать программу <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" className="rounded-xl px-5 py-5 text-base border-[#d9c6a2] text-[#3c2f1e]">
@@ -272,7 +294,7 @@ export default function HomeClient() {
             role="tab"
             aria-selected={track === "tarot"}
             className={`rounded-xl px-4 py-2 text-sm ${track === "tarot" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
-            style={track === "tarot" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271а" } : undefined}
+            style={track === "tarot" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
             onClick={() => setTrack("tarot")}
           >
             Таро
@@ -282,7 +304,7 @@ export default function HomeClient() {
             role="tab"
             aria-selected={track === "astro"}
             className={`rounded-xl px-4 py-2 text-sm ${track === "astro" ? "" : "border border-[#d9c6a2] bg-white/80 text-[#3c2f1e]"}`}
-            style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271а" } : undefined}
+            style={track === "astro" ? { background:"linear-gradient(180deg, #ead9b8 0%, #d7bd8f 40%, #bf965d 100%)", color:"#2f271a" } : undefined}
             onClick={() => setTrack("astro")}
           >
             Астрология
@@ -345,7 +367,7 @@ export default function HomeClient() {
       <section id="reviews" className="mx-auto max-w-7xl px-4 py-16">
         <div className="mb-8 text-center">
           <h3 className="text-3xl tracking-tight text-[#2f2619] font-semibold">Отзывы выпускников Академии</h3>
-          <p className="text-[#5b4a33] mt-2">Подтверждённые отзывы практикующих специалистов — о качестве подготовки и результатах в работе с клиентами.</p>
+          <p className="text-[#5б4a33] mt-2">Подтверждённые отзывы практикующих специалистов — о качестве подготовки и результатах в работе с клиентами.</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
@@ -382,7 +404,7 @@ export default function HomeClient() {
                   <Mail className="h-4 w-4 text-[#6b5a43]" />
                   <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Ваш email" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
                 </div>
-                <div className="flex items-center border border-[#e0д4bf] rounded-xl bg-white/80 px-3">
+                <div className="flex items-center border border-[#e0d4bf] rounded-xl bg-white/80 px-3">
                   <Phone className="h-4 w-4 text-[#6b5a43]" />
                   <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Телефон (опционально)" className="border-0 focus-visible:ring-0 text-[#3c2f1e]" />
                 </div>
