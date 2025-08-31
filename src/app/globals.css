@@ -1,8 +1,12 @@
+/* Tailwind v4 */
 @import "tailwindcss";
+/* Если используешь пакет анимаций — оставь строку ниже. Если пакета нет, закомментируй. */
 @import "tw-animate-css";
 
+/* Вариант для тёмной темы через класс .dark на <html> */
 @custom-variant dark (&:is(.dark *));
 
+/* ==== Токены темы (без изменений) ==== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -112,11 +116,39 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ==== Базовые слои ==== */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* ==== Улучшения UX/визуала, про которые просил ==== */
+
+/* Плавный скролл по ссылкам-якорям */
+html { scroll-behavior: smooth; }
+
+/* Компенсация липкой шапки при переходе на #anchor (подстрой при необходимости) */
+:root { --header-h: 72px; }
+[id] { scroll-margin-top: var(--header-h); }
+
+/* Плавное растворение краёв подложек («облачко» под текстом) */
+.edge-fade {
+  -webkit-mask-image: radial-gradient(150% 120% at 50% 50%, #000 60%, transparent 100%);
+          mask-image: radial-gradient(150% 120% at 50% 50%, #000 60%, transparent 100%);
+}
+
+/* Деликатный разделитель «небо → бежевый» без резкой линии */
+.soft-divider { position: relative; }
+.soft-divider::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 18px;           /* можно увеличить до 24px, если нужно ещё мягче */
+  background: linear-gradient(
+    to bottom,
+    rgba(234,223,207,0) 0%,
+    rgba(234,223,207,.55) 55%,
+    rgba(234,223,207,0) 100%
+  );
+  pointer-events: none;
 }
